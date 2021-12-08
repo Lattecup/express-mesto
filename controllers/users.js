@@ -14,7 +14,12 @@ module.exports.getUserById = (req, res) => {
       }
       return res.status(200).send({ data: user });
     })
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка на сервере' }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        return res.status(400).send({ message: 'Передан некорректный _id пользователя' });
+      }
+      return res.status(500).send({ message: 'Произошла ошибка на сервере' });
+    });
 };
 
 module.exports.createUser = (req, res) => {
@@ -41,13 +46,15 @@ module.exports.updateUserProfile = (req, res) => {
       runValidators: true,
     },
   )
-    .then((user) => res.status(200).send({ data: user }))
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({ message: 'Пользователь по указанному _id не найден' });
+      }
+      return res.status(200).send({ data: user });
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(400).send({ message: 'Переданы некорректные данные при обновлении профиля' });
-      }
-      if (err.name === 'NotFound') {
-        return res.status(404).send({ message: 'Пользователь с указанным _id не найден' });
       }
       return res.status(500).send({ message: 'Произошла ошибка на сервере' });
     });
@@ -59,15 +66,20 @@ module.exports.updateUserAvatar = (req, res) => {
   User.findByIdAndUpdate(
     req.user._id,
     { avatar },
-    { new: true },
+    {
+      new: true,
+      runValidators: true,
+    },
   )
-    .then((user) => res.status(200).send({ data: user }))
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({ message: 'Пользователь по указанному _id не найден' });
+      }
+      return res.status(200).send({ data: user });
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении профиля' });
-      }
-      if (err.name === 'NotFound') {
-        return res.status(404).send({ message: 'Пользователь с указанным _id не найден' });
+        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении аватара' });
       }
       return res.status(500).send({ message: 'Произошла ошибка на сервере' });
     });
