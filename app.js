@@ -1,8 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const { errors, celebrate, Joi } = require('celebrate');
 const mongoose = require('mongoose');
 const { login, createUser } = require('./controllers/users');
-const { auth } = require('./middlewares/auth');
+const auth = require('./middlewares/auth');
+const error = require('./middlewares/error');
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
@@ -14,21 +16,32 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
+}), login);
+
+app.post('/signup', celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().min(2).max(30),
+    about: Joi.string().min(2).max(30),
+    avatar:
+      Joi.string().pattern(/(http|https):\/\/(.www)?[a-zA-Z0-9-.]+\.[a-zA-Z]{2,}([a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=]+)*#*$/),
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
+}), createUser);
 
 app.use(auth);
 
 app.use('/', require('./routes/users'));
 app.use('/', require('./routes/cards'));
 
-app.use((err, req, res, next) => {
-  const { statusCode = 500, message } = err;
+app.use(errors());
 
-  res.status(statusCode).send({ message: statusCode === 500 ? 'Произошла ошибка на сервере' : message });
-
-  next();
-});
+app.use(error);
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
