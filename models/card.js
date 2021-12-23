@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const isURL = require('validator/lib/isEmail');
+const isURL = require('validator');
 
 // Схема карточки
 const cardSchema = new mongoose.Schema({

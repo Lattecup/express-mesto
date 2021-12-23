@@ -49,28 +49,28 @@ module.exports.createUser = (req, res, next) => {
     name, about, avatar, email, password,
   } = req.body;
 
-  return bcrypt.hash(password, 10)
+  User.findOne({ email })
+    .then((user) => {
+      if (user) {
+        throw new ConflictError('Пользователь с указанным email уже существует');
+      }
+      return bcrypt.hash(password, 10);
+    })
     .then((hash) => {
       User.create({
-        name,
-        about,
-        avatar,
-        email,
-        password: hash,
+        name, about, avatar, email, password: hash,
       })
-        // eslint-disable-next-line consistent-return
-        .catch((err) => {
-          if (err.name === 'MongoError' && err.code === 11000) {
-            throw new ConflictError('Пользователь с указанным email уже существует');
-          }
-        })
-        .then((user) => res.status(200).send({ data: user }))
-        .catch((err) => {
-          if (err.name === 'ValidationError') {
-            next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
-          }
-          next(err);
-        });
+        .then(() => res.status(200).send({
+          data: {
+            name, about, avatar, email,
+          },
+        }));
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
+      }
+      next(err);
     });
 };
 
