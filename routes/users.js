@@ -6,7 +6,7 @@ const {
 
 router.get('/users', getAllUsers);
 
-router.get('./users/me', getMyProfile);
+router.get('/users/me', getMyProfile);
 
 router.get('/users/:userId', celebrate({
   params: Joi.object().keys({

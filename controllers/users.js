@@ -31,17 +31,9 @@ module.exports.getUserById = (req, res, next) => {
 module.exports.getMyProfile = (req, res, next) => {
   User.findById(req.params._id)
     .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Пользователь по указанному _id не найден');
-      }
-      return res.status(200).send({ data: user });
+      res.send({ data: user });
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Передан некорректный _id пользователя'));
-      }
-      next(err);
-    });
+    .catch(next);
 };
 
 module.exports.createUser = (req, res, next) => {

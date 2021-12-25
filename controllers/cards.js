@@ -10,9 +10,10 @@ module.exports.getAllCards = (req, res, next) => {
 };
 
 module.exports.createCard = (req, res, next) => {
+  const owner = req.user._id;
   const { name, link } = req.body;
 
-  Card.create({ name, link, owner: req.user._id })
+  Card.create({ name, link, owner })
     .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -23,15 +24,16 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
         throw new NotFoundError('Карточка по указанному _id не найдена');
       }
-      if (!card.owner === req.user._id) {
+      if (!card.owner.toString() === req.user._id.toString()) {
         throw new ForbiddenError('Удалять чужие карточки запрещено');
       }
-      return res.status(200).send({ data: card });
+      return card.remove()
+        .then(() => res.status(200).send({ data: card }));
     })
     .catch((err) => {
       if (err.name === 'CastError') {
